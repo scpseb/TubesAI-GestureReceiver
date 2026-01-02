@@ -21,7 +21,8 @@ Untuk keperluan Tugas Besar mata kuliah Artificial Intelligence, Sistem Internet
 - Muhammad Miqdam Fuadi 101022300106 
 
 - Muhamad Afdhu 101022330171
-#Telkom University
+### Telkom University
+
 
 
 
