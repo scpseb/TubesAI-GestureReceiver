@@ -15,15 +15,14 @@ Untuk keperluan Tugas Besar mata kuliah Artificial Intelligence, Sistem Internet
 - Fan 12V
 - DC Lamp 12V
 
-made by 
+## Made by 
+- Sebastian Cahyaputra 101022300014 
 
-Sebastian Cahyaputra 101022300014 
+- Muhammad Miqdam Fuadi 101022300106 
 
-Muhammad Miqdam Fuadi 101022300106 
-
-Muhamad Afdhu 101022330171
-
+- Muhamad Afdhu 101022330171
 Telkom University
+
 
 
 
