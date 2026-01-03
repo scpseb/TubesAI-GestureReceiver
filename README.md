@@ -17,9 +17,7 @@ Untuk keperluan Tugas Besar mata kuliah Artificial Intelligence, Sistem Internet
 
 ## Made by 
 - Sebastian Cahyaputra 101022300014 
-
 - Muhammad Miqdam Fuadi 101022300106 
-
 - Muhamad Afdhu 101022330171
 ### Telkom University
 
