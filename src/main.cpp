@@ -17,8 +17,8 @@
 #include <BLEAdvertisedDevice.h>
 
 // ================= WIFI CONFIG =================
-const char* ssid     = "NAMA_WIFI";      // Ganti dengan SSID WiFi
-const char* password = "PASSWORD_WIFI";  // Ganti dengan password WiFi
+const char* ssid     = "Ash";      // Ganti dengan SSID WiFi
+const char* password = "jadibegini";  // Ganti dengan password WiFi
 
 #define RELAY_PIN       2    
 #define FAN_PIN         16 
@@ -120,7 +120,7 @@ void handleGestureCode(uint8_t code) {
             break;
             
         default:
-            Serial.printf("[Action] Unknown code: %d\n", code);
+            Serial.printf("[Action] DO NOTHING");
             break;
     }
     
