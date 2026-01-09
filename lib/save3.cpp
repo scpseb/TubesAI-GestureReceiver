@@ -1,23 +1,6 @@
-/*
- * ESP32 BLE Receiver with Blynk Integration
- * 
- * Menerima kode gesture dari BLE Sender (XIAO ESP32S3):
- * - Kode 0: Matikan semua (Relay OFF, Fan OFF)
- * - Kode 1: Nyalakan Relay (Lampu ON)
- * - Kode 2: Nyalakan Fan
- * 
- * Blynk Virtual Pins:
- * - V0: Status Relay (0/1) - Output ke app
- * - V1: Status Fan (0/1) - Output ke app
- * - V2: Manual control Relay - Input dari app
- * - V3: Manual control Fan - Input dari app
- * - V4: Last gesture code received - Output ke app
- * - V5: Connection status BLE - Output ke app
- */
-
 #include <Arduino.h>
 
-// ================= BLYNK CONFIG (HARUS DI ATAS) =================
+// ================= BLYNK CONFIG =================
 #define BLYNK_TEMPLATE_ID   "TMPL6BVZEF-iH"
 #define BLYNK_TEMPLATE_NAME "TubesIoT"
 #define BLYNK_AUTH_TOKEN    "NdGClqTkK2-MF8ak6khBpEWFvMSS2Pmq"
@@ -37,14 +20,13 @@
 const char* ssid     = "Ash";      // Ganti dengan SSID WiFi
 const char* password = "jadibegini";  // Ganti dengan password WiFi
 
-// ================= PIN CONFIG =================
-#define RELAY_PIN       4     // Relay (lampu / beban)
-#define FAN_PIN         16    // Fan 5V (via relay / MOSFET)
-//#define LED_STATUS_PIN  2     // Built-in LED untuk status
+#define RELAY_PIN       2    
+#define FAN_PIN         16 
 
 // Pin behavior
-#define RELAY_ACTIVE_LOW  false   // Relay aktif saat LOW
-#define FAN_ACTIVE_HIGH   true   // Fan aktif saat HIGH
+
+#define RELAY_ACTIVE_LOW  false    // Set false jika relay Anda active high
+#define FAN_ACTIVE_HIGH   true    // Fan ON saat pin HIGH
 
 // ================= BLE UUID ===================
 #define SERVICE_UUID        "0001046d-9d7a-4cc4-8cd9-e385bc31104d"
@@ -55,8 +37,6 @@ const char* password = "jadibegini";  // Ganti dengan password WiFi
 #define VPIN_FAN_STATUS     V1    // Status fan (output)
 #define VPIN_RELAY_CONTROL  V2    // Kontrol relay dari app (input)
 #define VPIN_FAN_CONTROL    V3    // Kontrol fan dari app (input)
-#define VPIN_GESTURE_CODE   V4    // Kode gesture terakhir (output)
-#define VPIN_BLE_STATUS     V5    // Status koneksi BLE (output)
 
 // ================= TIMING CONFIG ==============
 #define BLE_SCAN_INTERVAL   5000   // Interval scan BLE (ms)
@@ -140,14 +120,13 @@ void handleGestureCode(uint8_t code) {
             break;
             
         default:
-            Serial.printf("[Action] Unknown code: %d\n", code);
+            Serial.printf("[Action] DO NOTHING");
             break;
     }
     
     // Update Blynk immediately
     Blynk.virtualWrite(VPIN_RELAY_STATUS, relayState ? 1 : 0);
     Blynk.virtualWrite(VPIN_FAN_STATUS, fanState ? 1 : 0);
-    Blynk.virtualWrite(VPIN_GESTURE_CODE, code);
 }
 
 // ================= BLYNK CALLBACKS ============
@@ -175,11 +154,6 @@ BLYNK_CONNECTED() {
     // Sync semua status ke app
     Blynk.virtualWrite(VPIN_RELAY_STATUS, relayState ? 1 : 0);
     Blynk.virtualWrite(VPIN_FAN_STATUS, fanState ? 1 : 0);
-    Blynk.virtualWrite(VPIN_BLE_STATUS, bleConnected ? 1 : 0);
-    
-    if (lastGestureCode != 255) {
-        Blynk.virtualWrite(VPIN_GESTURE_CODE, lastGestureCode);
-    }
 }
 
 // Update status ke Blynk secara periodik
@@ -189,7 +163,6 @@ void updateBlynkStatus() {
         
         Blynk.virtualWrite(VPIN_RELAY_STATUS, relayState ? 1 : 0);
         Blynk.virtualWrite(VPIN_FAN_STATUS, fanState ? 1 : 0);
-        Blynk.virtualWrite(VPIN_BLE_STATUS, bleConnected ? 1 : 0);
     }
 }
 
@@ -252,10 +225,7 @@ class MyClientCallback : public BLEClientCallbacks {
     void onDisconnect(BLEClient* pclient) override {
         bleConnected = false;
         Serial.println("[BLE] ❌ Disconnected from server");
-        
-        // Update Blynk saja, JANGAN matikan relay/fan otomatis
-        Blynk.virtualWrite(VPIN_BLE_STATUS, 0);
-        
+                
         // LED status OFF (hanya LED indikator)
         //digitalWrite(LED_STATUS_PIN, LOW);
     }
@@ -312,12 +282,7 @@ bool connectToServer() {
     }
     
     bleConnected = true;
-    
-    // Update Blynk
-    Blynk.virtualWrite(VPIN_BLE_STATUS, 1);
-    
-    // LED status ON
-    //digitalWrite(LED_STATUS_PIN, HIGH);
+
     
     Serial.println("[BLE] ✅ FULLY CONNECTED");
     return true;
@@ -358,21 +323,38 @@ void setup() {
     Serial.println("  ESP32 BLE Receiver + Blynk Integration");
     Serial.println("=============================================\n");
     
-    // ============ PENTING: Untuk relay ACTIVE HIGH ============
-    // Set pin HIGH SEBELUM pinMode agar relay tidak nyala saat boot
-    // Karena relay active-high: HIGH = OFF, LOW = ON
-    digitalWrite(RELAY_PIN, LOW);  // Pre-set LOW (relay OFF)
+    digitalWrite(RELAY_PIN, LOW);  // Pre-set HIGH (relay OFF)
     digitalWrite(FAN_PIN, LOW);     // Pre-set LOW (fan OFF)
-    //digitalWrite(LED_STATUS_PIN, LOW);
     
     // Baru set pinMode setelah state sudah benar
     pinMode(RELAY_PIN, OUTPUT);
     pinMode(FAN_PIN, OUTPUT);
-    //pinMode(LED_STATUS_PIN, OUTPUT);
+    
+    // Force pin state again after pinMode
+    digitalWrite(RELAY_PIN, HIGH);  // Pastikan HIGH (relay OFF)
+    digitalWrite(FAN_PIN, LOW);     // Pastikan LOW (fan OFF)
     
     // Konfirmasi state awal
-    Serial.printf("[Setup] RELAY_PIN=%d (should be LOW for OFF)\n", digitalRead(RELAY_PIN));
-    Serial.printf("[Setup] FAN_PIN=%d (should be LOW for OFF)\n", digitalRead(FAN_PIN));
+    Serial.printf("[Setup] RELAY_PIN GPIO%d = %d (HIGH=OFF for active-low relay)\n", RELAY_PIN, digitalRead(RELAY_PIN));
+    Serial.printf("[Setup] FAN_PIN GPIO%d = %d (LOW=OFF)\n", FAN_PIN, digitalRead(FAN_PIN));
+    
+    // ============ TEST RELAY ============
+    Serial.println("\n[TEST] Testing relay control...");
+    Serial.println("[TEST] Relay should be OFF now. Check your relay.");
+    delay(2000);
+    
+    Serial.println("[TEST] Turning relay ON (pin LOW)...");
+    digitalWrite(RELAY_PIN, LOW);
+    Serial.printf("[TEST] RELAY_PIN = %d\n", digitalRead(RELAY_PIN));
+    delay(2000);
+    
+    Serial.println("[TEST] Turning relay OFF (pin HIGH)...");
+    digitalWrite(RELAY_PIN, HIGH);
+    Serial.printf("[TEST] RELAY_PIN = %d\n", digitalRead(RELAY_PIN));
+    delay(1000);
+    
+    Serial.println("[TEST] Relay test complete.\n");
+    // ============ END TEST ============
     
     // Set initial state melalui fungsi (untuk update variable juga)
     relayWrite(false);
@@ -455,16 +437,6 @@ void loop() {
                 startBLEScan();
             } else if (client == nullptr) {
                 startBLEScan();
-            }
-        }
-        
-        // Update status koneksi
-        if (client != nullptr) {
-            bool currentlyConnected = client->isConnected();
-            if (bleConnected != currentlyConnected) {
-                bleConnected = currentlyConnected;
-                Blynk.virtualWrite(VPIN_BLE_STATUS, bleConnected ? 1 : 0);
-                //digitalWrite(LED_STATUS_PIN, bleConnected ? HIGH : LOW);
             }
         }
     }
